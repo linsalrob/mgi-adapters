@@ -1,7 +1,7 @@
 [![Edwards Lab](https://img.shields.io/badge/Bioinformatics-EdwardsLab-03A9F4)](https://edwards.flinders.edu.au)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![DOI](https://www.zenodo.org/badge/643454906.svg)](https://www.zenodo.org/badge/latestdoi/643454906)
 ![GitHub language count](https://img.shields.io/github/languages/count/linsalrob/mgi-adapters)
-[![Downloads](https://img.shields.io/github/downloads/linsalrob/primer-trimming/total?style=flat-square)](https://github.com/linsalrob/mgi-adapters/releases)
 
 
 
@@ -100,6 +100,7 @@ It seems that the MGI sequencer is twice as accurate in the forward direction as
 
 ## I'm sold, how do I use it?
 
+The code is written in ANSI-C, and should be portable to any machine you use. The only dependency is on the inimitable [kseq](https://lh3lh3.users.sourceforge.net/kseq.shtml) library, and we include a copy of that for you (in `include/`, obvs). However, do post an issue if you have trouble with make or make install.
 
 You can install the executables from source, you just need GCC. Clone this git repo and use make:
 
@@ -107,12 +108,10 @@ You can install the executables from source, you just need GCC. Clone this git r
 git clone https://github.com/linsalrob/mgi-adapters.git
 cd mgi-adapters
 make all
-sudo make install 
-or
 make install PREFIX=$HOME/bin
 ```
 
-This will install `search-mgi-adapters` and `filter_reads_with_n` into either `/usr/local/bin` or `$HOME/bin` depending which option you choose.
+This will install `search-mgi-adapters` and `filter_reads_with_n` into `$HOME/bin`. You can also `sudo make install` to install it into `/usr/local/bin` if you really want, but I wouldn't do that.
 
 ## How do I run the code
 
@@ -139,7 +138,7 @@ We also provide three additional files, a list of all the hits to the I7 left se
 Check our out DOI code and please cite it as:
 
 ```
-Edwards, R.A. and Edwards, J.A. MGI-Adapter Trimming: Efficient Removal of Sequencing Adapters.
+Edwards, J.A. and Edwards, R.A. MGI-Adapter Trimming: Efficient Removal of Sequencing Adapters. DOI: 10.5281/zenodo.7954281
 ```
 
 
