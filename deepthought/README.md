@@ -32,7 +32,7 @@ mkdir trimming_slurm
 # Step 4. Find out how many R1 reads we have
 
 ```
-wc -l R1_reads.txt
+READS=$(wc -l R1_reads.txt | awk '{print $1}');
 ```
 
 # Step 5. Submit the array job to process all those reads. 
@@ -40,13 +40,15 @@ wc -l R1_reads.txt
 Note that the slurm script makes the directories for fastq\_trimmed and fastq\_adapter\_matches. It also handles both the R1 and R2 files.
 
 ```
-sbatch --array=1-XXX:1 ~/GitHubs/mgi-adapters/deepthought/trim_array.slurm
+sbatch --array=1-$READS:1 ~/GitHubs/mgi-adapters/deepthought/trim_array.slurm
 ```
 
-Replace XXX with the number of reads in R1\_reads.txt that you found in step 4. For example, 
+# Wait for the results!
+
+Here is the whole command in one line, so you can just copy and paste it!
 
 ```
-sbatch --array=1-127:1 ~/GitHubs/mgi-adapters/deepthought/trim_array.slurm
+mkdir trimming_slurm; find fastq -type f -name \*R1* -printf "%f\n" > R1_reads.txt; READS=$(wc -l R1_reads.txt | awk '{print $1}'); sbatch --array=1-$READS:1 ~/GitHubs/mgi-adapters/deepthought/trim_array.slurm
 ```
 
 
