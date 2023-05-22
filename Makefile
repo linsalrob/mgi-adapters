@@ -22,7 +22,7 @@ install: $(BDIR)search-mgi-adapters $(BDIR)filter_reads_with_n
 objects := $(ODIR)print-sequences.o \
 	$(ODIR)store-primers.o $(ODIR)seqs_to_ints.o \
 	$(ODIR)rob_dna.o $(ODIR)test.o $(ODIR)filter_reads_with_n.o \
-	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o 
+	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)trim-paired-snp.o
 
 $(objects): $(ODIR)%.o: $(SDIR)%.c
 	@mkdir -p $(@D)
@@ -54,7 +54,7 @@ $(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-
 
 search-mgi-adapters: $(BDIR)search-mgi-adapters
 
-EXEC=filter_reads_with_n search-mgi-adapters test
+EXEC=filter_reads_with_n search-mgi-adapters trim-mgi-adapters test
 all: $(addprefix $(BDIR), $(EXEC))
 
 
