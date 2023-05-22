@@ -27,6 +27,8 @@ find fastq -type f -name \*R1* -printf "%f\n" > R1_reads.txt
 mkdir trimming_slurm
 ```
 
+**Note:** If you don't do this, the `sbatch` command below will run normally and you will think everything is fine, although it finishes very quickly and has not done anything!
+
 # Step 4. Find out how many R1 reads we have
 
 ```
