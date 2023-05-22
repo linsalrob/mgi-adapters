@@ -43,7 +43,6 @@ void create_all_snps(char *adapter, int start, int kmer, kmer_bst_t *primers) {
 			char* name = malloc(sizeof(char) * 40);
 			sprintf(name, "SNP: %d %c->%c", i, adapter[i], snp[i]);
 			uint64_t encs = kmer_encoding(snp, 0, kmer);
-			fprintf(stderr, "SNP: %d %c->%c %s %ld\n", i, adapter[i], snp[i], snp, encs);
 			add_primer(encs, name, primers);
 		}
 	}
