@@ -20,8 +20,6 @@ void help() {
 	printf("-r R2 file (%sr%sight reads)\n", GREEN, ENDC);
 	printf("-s I7left primer sequence (%ss%seven). Default 'GATCGGAAGAGCACACGTCTGAACTCCAGTCAC'\n", GREEN, ENDC);
 	printf("-f I5right primer sequence (%sf%sive). Default 'ACACTCTTTCCCTACACGACGCTCTTCCGATC'\n", GREEN, ENDC);
-	printf("-p R1 file to write to (will be gzip compressed). Default: R1.trimmed.fastq.gz\n");
-	printf("-q R2 file to write to (will be gzip compressed). Default: R2.trimmmed.fastq.gz\n");
 	printf("-j Write the R1 matches to this file. Default: stdout\n");
 	printf("-k Write the R2 matches to this file. Default: stdout\n");
 	printf("-a Write the trimming adjustments here\n");
@@ -119,6 +117,6 @@ int main(int argc, char* argv[]) {
     if (opt->R2_output == NULL)
 	    opt->R2_output = "R2.trimmed.fastq.gz";
 
-    trim_pairwise_snps(opt);
+    search_pairwise_snps(opt);
 }
 

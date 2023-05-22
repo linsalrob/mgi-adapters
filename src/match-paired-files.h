@@ -48,12 +48,12 @@ struct R1_read {
 
 unsigned hash (char *s);
 
-/* parse the R1 and R2 files and trim sequences */
-
-void trim_pairwise(struct options *opt);
 
 /* this version tries to get all single bp snps in the adapters */
 
 void trim_pairwise_snps(struct options *opt);
 
+/* search but don't trim */
+
+void search_pairwise_snps(struct options *opt);
 #endif
