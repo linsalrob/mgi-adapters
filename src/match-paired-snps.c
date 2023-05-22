@@ -174,12 +174,16 @@ void search_pairwise_snps(struct options *opt) {
 		R1read->next = reads[hashval];
 		reads[hashval] = R1read;
 	}
+	printf("PArt 1\n");
 
 	// I am going to reset kseq so we have to initiate it again later
 	kseq_destroy(seq);
 	gzclose(fp1);
-	fclose(match_out);
 
+	if (opt->R1_matches)
+		fclose(match_out);
+
+	printf("PArt 0\n");
 	// we don't need the I7left primers any more!
 	free(i7l_primers);
 
@@ -212,6 +216,7 @@ void search_pairwise_snps(struct options *opt) {
 	}
 
 	create_all_snps(i5right_rc, 0, r2kmer, i5r_primers);
+	printf("Created all snps\n");
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");
@@ -306,8 +311,10 @@ void search_pairwise_snps(struct options *opt) {
 
 	}
 
-	fclose(adjust);
-	fclose(match_out);
+	if (opt->adjustments)
+		fclose(adjust);
+	if (opt->R2_matches)
+		fclose(match_out);
 	kseq_destroy(seq);
 	gzclose(fp2);
 
@@ -453,7 +460,8 @@ void trim_pairwise_snps(struct options *opt) {
 	// I am going to reset kseq so we have to initiate it again later
 	kseq_destroy(seq);
 	gzclose(fp1);
-	fclose(match_out);
+	if (opt->R1_matches)
+		fclose(match_out);
 
 	// we don't need the I7left primers any more!
 	free(i7l_primers);
@@ -594,8 +602,10 @@ void trim_pairwise_snps(struct options *opt) {
 	}
 
 	pclose(pipe);
-	fclose(adjust);
-	fclose(match_out);
+	if (opt->adjustments)
+		fclose(adjust);
+	if (opt->R2_matches)
+		fclose(match_out);
 	kseq_destroy(seq);
 	gzclose(fp2);
 
