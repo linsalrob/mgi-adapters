@@ -11,10 +11,10 @@
 
 R1=$(head -n $SLURM_ARRAY_TASK_ID R1_reads.txt | tail -n 1)
 R2=${R1/R1/R2}
-R1trimmed=${R1/.fastq.gz/.trimmed.fastq.gz}
-R2trimmed=${R2/.fastq.gz/.trimmed.fastq.gz}
 R1hits=${R1/.fastq.gz/.hits.tsv}
 R2hits=${R2/.fastq.gz/.hits.tsv}
 R2adjust=${R2/.fastq.gz/.adjustments}
 
-~/GitHubs/primer-trimming/bin/search-paired-snps -l fastq/$R1 -r fastq/$R2 -p fastq_trimmed/$R1trimmed -q fastq_trimmed/$R2trimmed -j fastq_adapter_matches/$R1hits -k fastq_adapter_matches/$R2hits -a fastq_adapter_matches/$R2adjust
+
+mkdir -p fastq_trimmed fastq_adapter_matches
+~/GitHubs/primer-trimming/bin/search-paired-snps -l fastq/$R1 -r fastq/$R2 -p fastq_trimmed/$R1 -q fastq_trimmed/$R2 -j fastq_adapter_matches/$R1hits -k fastq_adapter_matches/$R2hits -a fastq_adapter_matches/$R2adjust
