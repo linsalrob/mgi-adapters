@@ -75,7 +75,7 @@ GTTCGGAAGAGCACACGTCTGAACTCCAGTCAC
 ...
 ```
 
-To do this, we use a binary search tree. If you want more information about that, watch Rob's YouTube channel.
+To do this, we use a binary search tree. If you want more information about that, watch [Rob's YouTube channel](https://www.youtube.com/watch?v=lhTCSGRAlXI).
 
 Now that we have found the adapters, we trim the sequences at those positions and print out the trimmed sequences. 
 
@@ -111,20 +111,21 @@ make all
 make install PREFIX=$HOME/bin
 ```
 
-This will install `search-mgi-adapters` and `filter_reads_with_n` into `$HOME/bin`. You can also `sudo make install` to install it into `/usr/local/bin` if you really want, but I wouldn't do that.
+This will install `search-mgi-adapters`, `trim-mgi-adapters`, and `filter_reads_with_n` into `$HOME/bin`. You can also `sudo make install` to install it into `/usr/local/bin` if you really want, but I wouldn't do that.
 
 ## How do I run the code
 
-If you have one pair of fastq files, you can specify those on the command line:
+If you have one pair of fastq files, you can search those for adapters like so:
 
 ```
 search-mgi-adapters -l R1.fsatq.gz -r R2.fastq.gz
 ```
 
-If you want to specify diffent output files you can do so:
+This will report the locations of the adapters, and you can explore the sequences. Nothing is changed. However, if you want to automatically trim the sequences, you an use `trim-mgi-adapters` which will create new `fastq` files for you. These are gzipped files, and by default they are named `R1.trimmed.fastq.gz` and `R2.trimmed.fastq.gz` but you can specify different output file names:
+
 
 ```
-search-mgi-adapters -l R1.fsatq.gz -r R2.fastq.gz -p R1.trimmed.fastq.gz -q R2.trimmed.fastq.gz
+trim-mgi-adapters -l R1.fsatq.gz -r R2.fastq.gz -p R1.trimmed.fastq.gz -q R2.trimmed.fastq.gz
 ```
 
 (Note: At the moment we _only_ write the sequences gzip compressed)
