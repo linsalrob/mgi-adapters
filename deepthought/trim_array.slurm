@@ -17,4 +17,4 @@ R2adjust=${R2/.fastq.gz/.adjustments}
 
 
 mkdir -p fastq_trimmed fastq_adapter_matches
-~/GitHubs/primer-trimming/bin/search-paired-snps -l fastq/$R1 -r fastq/$R2 -p fastq_trimmed/$R1 -q fastq_trimmed/$R2 -j fastq_adapter_matches/$R1hits -k fastq_adapter_matches/$R2hits -a fastq_adapter_matches/$R2adjust
+~/GitHubs/mgi-adapters/bin/trim-mgi-adapters -l fastq/$R1 -r fastq/$R2 -p fastq_trimmed/$R1 -q fastq_trimmed/$R2 -j fastq_adapter_matches/$R1hits -k fastq_adapter_matches/$R2hits -a fastq_adapter_matches/$R2adjust
