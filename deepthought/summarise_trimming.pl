@@ -22,8 +22,8 @@ if (!@dir) {
 
 my ($r1tot, $r2tot, $r1trim, $r2trim, $seqs) = (0, 0, 0, 0, 0);
 
+print "Directory\tSequence files\tR1 total\tR2 total\tR1 trimmed\tR2 trimmed\n";
 foreach my $dir (@dir) {
-	print "Directory\tSequence files\tR1 total\tR2 total\tR1 trimmed\tR2 trimmed\n";
 	opendir(DIR, $dir) || die "can't open $dir";
 	foreach my $file (grep {$_ !~ /^\./} readdir(DIR)) {
 		open(IN, "$dir/$file") || die "Can't open $dir/$file";
