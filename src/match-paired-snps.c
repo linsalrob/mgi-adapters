@@ -151,7 +151,7 @@ void search_pairwise_snps(struct options *opt) {
 
 		kmer_bst_t *ks = find_primer(enc, i7l_primers);
                 if (ks) {
-			fprintf(match_out, "R1\t%s\t%s\t0\n", ks->id, seq->name.s);
+			fprintf(match_out, "R1\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 			counts.R1_found++;
 			R1read->trim = 0;
 			unsigned hashval = hash(R1read->id) % opt->tablesize;
@@ -164,7 +164,7 @@ void search_pairwise_snps(struct options *opt) {
 			enc = next_kmer_encoding(seq->seq.s, i, r1kmer, enc);
 			kmer_bst_t *ks = find_primer(enc, i7l_primers);
 			if (ks) {
-				fprintf(match_out, "R1\t%s\t%s\t%d\n", ks->id, seq->name.s, i);
+				fprintf(match_out, "R1\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, i, strlen(seq->seq.s)-i);
 				counts.R1_found++;
 				R1read->trim = i;
 				break;
@@ -174,7 +174,6 @@ void search_pairwise_snps(struct options *opt) {
 		R1read->next = reads[hashval];
 		reads[hashval] = R1read;
 	}
-	printf("PArt 1\n");
 
 	// I am going to reset kseq so we have to initiate it again later
 	kseq_destroy(seq);
@@ -183,7 +182,6 @@ void search_pairwise_snps(struct options *opt) {
 	if (opt->R1_matches)
 		fclose(match_out);
 
-	printf("PArt 0\n");
 	// we don't need the I7left primers any more!
 	free(i7l_primers);
 
@@ -216,7 +214,6 @@ void search_pairwise_snps(struct options *opt) {
 	}
 
 	create_all_snps(i5right_rc, 0, r2kmer, i5r_primers);
-	printf("Created all snps\n");
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");
@@ -247,7 +244,7 @@ void search_pairwise_snps(struct options *opt) {
 		int trim = -1;
 		kmer_bst_t *ks = find_primer(enc, i5r_primers);
 		if (ks) {
-			fprintf(match_out, "R2\t%s\t%s\t0\n", ks->id, seq->name.s);
+			fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 			counts.R2_found++;
 			trim = 0;
 		} else {
@@ -255,7 +252,7 @@ void search_pairwise_snps(struct options *opt) {
 				enc = next_kmer_encoding(seq->seq.s, i, r2kmer, enc);
 				kmer_bst_t *ks = find_primer(enc, i5r_primers);
 				if (ks) {
-					fprintf(match_out, "R2\t%s\t%s\t%d\n", ks->id, seq->name.s, i);
+					fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, i, strlen(seq->seq.s)-i);
 					counts.R2_found++;
 					trim = i;
 				}
