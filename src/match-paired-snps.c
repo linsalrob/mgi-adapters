@@ -16,6 +16,8 @@
 #include "match-paired-files.h"
 #include "colours.h"
 #include "seqs_to_ints.h"
+#include "create-snps.h"
+#include "hash.h"
 #include "compare-seqs.h"
 #include "rob_dna.h"
 #include "kseq.h"
@@ -23,30 +25,6 @@
 KSEQ_INIT(gzFile, gzread);
 
 #define MAXKMER 31
-
-void create_all_snps(char *adapter, int start, int kmer, kmer_bst_t *primers) {
-	/*
-	 * calculate a SNP at every position. There is pretty much no easy way to do this rather than an O(4**k) operation, I don't think?
-	 */
-
-	uint64_t enc = kmer_encoding(adapter, 0, kmer);
-	add_primer(enc, "Original", primers);
-
-	char *base = "ACGT";
-	for (int i = 0; i < kmer; i++) {
-		char* snp = malloc(sizeof(char) * strlen(adapter)+1);
-		strcpy(snp, adapter);
-		for (int j = 0; j<4; j++) {
-			if (adapter[i] == base[j])
-				continue;
-			snp[i] = base[j];
-			char* name = malloc(sizeof(char) * 40);
-			sprintf(name, "SNP: %d %c->%c", i, adapter[i], snp[i]);
-			uint64_t encs = kmer_encoding(snp, 0, kmer);
-			add_primer(encs, name, primers);
-		}
-	}
-}
 
 
 
@@ -93,7 +71,7 @@ void search_pairwise_snps(struct options *opt) {
 	i7l_primers->id = "";
 
 
-	create_all_snps(opt->I7left, 0, r1kmer, i7l_primers);
+	create_all_snps(opt->I7left, 0, r1kmer, "I7L", i7l_primers);
 
 	struct R1_read **reads;
 	reads = malloc(sizeof(*reads) * opt->tablesize);
@@ -213,7 +191,7 @@ void search_pairwise_snps(struct options *opt) {
 		exit(3);
 	}
 
-	create_all_snps(i5right_rc, 0, r2kmer, i5r_primers);
+	create_all_snps(i5right_rc, 0, r2kmer, "I5R", i5r_primers);
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");
@@ -372,7 +350,7 @@ void trim_pairwise_snps(struct options *opt) {
 	i7l_primers->id = "";
 
 
-	create_all_snps(opt->I7left, 0, r1kmer, i7l_primers);
+	create_all_snps(opt->I7left, 0, r1kmer, "I7L", i7l_primers);
 
 	struct R1_read **reads;
 	reads = malloc(sizeof(*reads) * opt->tablesize);
@@ -491,7 +469,7 @@ void trim_pairwise_snps(struct options *opt) {
 		exit(3);
 	}
 
-	create_all_snps(i5right_rc, 0, r2kmer, i5r_primers);
+	create_all_snps(i5right_rc, 0, r2kmer, "I5R", i5r_primers);
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");
@@ -655,11 +633,3 @@ void trim_pairwise_snps(struct options *opt) {
 	fprintf(stderr, "Sequences trimmed: R1 %d R2 %d\n", counts.R1_trimmed, counts.R2_trimmed);
 }
 
-
-unsigned hash (char *s) {
-	unsigned hashval;
-
-	for (hashval=0; *s != '\0'; s++)
-		hashval = *s + 31 * hashval;
-	return hashval;
-}

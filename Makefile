@@ -22,7 +22,8 @@ install: $(BDIR)search-mgi-adapters $(BDIR)filter_reads_with_n
 objects := $(ODIR)print-sequences.o \
 	$(ODIR)store-primers.o $(ODIR)seqs_to_ints.o \
 	$(ODIR)rob_dna.o $(ODIR)test.o $(ODIR)filter_reads_with_n.o \
-	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)trim-paired-snp.o
+	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)trim-paired-snp.o \
+	$(ODIR)create-snps.o $(ODIR)hash.o
 
 $(objects): $(ODIR)%.o: $(SDIR)%.c
 	@mkdir -p $(@D)
@@ -42,13 +43,13 @@ $(BDIR)filter_reads_with_n: $(ODIR)rob_dna.o $(ODIR)filter_reads_with_n.o
 filter_reads_with_n: $(BDIR)filter_reads_with_n
 
 
-$(BDIR)trim-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)match-paired-snps.o $(ODIR)trim-paired-snp.o
+$(BDIR)trim-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)match-paired-snps.o $(ODIR)trim-paired-snp.o $(ODIR)create-snps.o $(ODIR)hash.o
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 trim-mgi-adapters: $(BDIR)trim-mgi-adapters
 
-$(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o
+$(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)create-snps.o $(ODIR)hash.o
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
