@@ -42,5 +42,5 @@ void trim_pairwise_snps(struct options *opt);
 
 /* search but don't trim */
 
-void search_all_pairwise_snps(struct options *opt);
+void search_pairwise_snps(struct options *opt);
 #endif
