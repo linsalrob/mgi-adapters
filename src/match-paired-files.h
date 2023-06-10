@@ -18,6 +18,7 @@ struct options {
 	char* I7left;
 	char* I5right;
 	int tablesize;
+	bool verbose;
 	bool debug;
 };
 

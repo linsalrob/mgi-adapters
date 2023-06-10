@@ -14,17 +14,16 @@
 #include "version.h"
 
 void help() {
-	printf("USAGE: search-paired-snp -l -r -s -f -p -q\n");
-	printf("\nThis version attempts to look for SNPs at each position of your adapters\n\n");
-	printf("-l R1 file (%sl%seft reads)\n", GREEN, ENDC);
-	printf("-r R2 file (%sr%sight reads)\n", GREEN, ENDC);
-	printf("-s I7left primer sequence (%ss%seven). Default 'GATCGGAAGAGCACACGTCTGAACTCCAGTCAC'\n", GREEN, ENDC);
-	printf("-f I5right primer sequence (%sf%sive). Default 'ACACTCTTTCCCTACACGACGCTCTTCCGATC'\n", GREEN, ENDC);
-	printf("-p R1 file to write to (will be gzip compressed). Default: R1.trimmed.fastq.gz\n");
-	printf("-q R2 file to write to (will be gzip compressed). Default: R2.trimmmed.fastq.gz\n");
-	printf("-j Write the R1 matches to this file. Default: stdout\n");
-	printf("-k Write the R2 matches to this file. Default: stdout\n");
-	printf("-a Write the trimming adjustments here\n");
+	printf("USAGE: trim-paired-snp -l -r -s -f -p -q\n");
+	printf("-1 --R1 R%s1%s file\n", GREEN, ENDC);
+	printf("-2 --R2 R%s2%s file\n", GREEN, ENDC);
+	printf("-p --outputR1 R1 file to write to (will be gzip compressed). Default: R1.trimmed.fastq.gz\n");
+	printf("-q --outputR2 R2 file to write to (will be gzip compressed). Default: R2.trimmmed.fastq.gz\n");
+	printf("-s --I7left I7left primer sequence (%ss%seven). Default 'GATCGGAAGAGCACACGTCTGAACTCCAGTCAC'\n", GREEN, ENDC);
+	printf("-f --I5right I5right primer sequence (%sf%sive). Default 'ACACTCTTTCCCTACACGACGCTCTTCCGATC'\n", GREEN, ENDC);
+	printf("-j --matchesR1 Write the R1 matches to this file. Default: stdout\n");
+	printf("-k --matchesR2 Write the R2 matches to this file. Default: stdout\n");
+	printf("-a --adjustments Write the trimming adjustments here\n");
 }
 
 
@@ -53,30 +52,32 @@ int main(int argc, char* argv[]) {
 	opt->I7left = NULL;
 	opt->I5right = NULL;
 	opt->debug = false;
+	opt->verbose = false;
 	opt->adjustments = NULL;
 
     int gopt = 0;
     static struct option long_options[] = {
             {"R1",  required_argument, 0, 'l'},
             {"R2",  required_argument, 0, 'r'},
-            {"R1-output",  optional_argument, 0, 'p'},
-            {"R2-output",  optional_argument, 0, 'q'},
-            {"R1-matches",  optional_argument, 0, 'j'},
-            {"R2-matches",  optional_argument, 0, 'k'},
+	    {"outputR1",  optional_argument, 0, 'p'},
+            {"outputR2",  optional_argument, 0, 'q'},
+            {"matchesR1",  optional_argument, 0, 'j'},
+            {"matchesR2",  optional_argument, 0, 'k'},
             {"I7left",  required_argument, 0, 's'},
             {"I5right", required_argument, 0, 'f'},
 	    {"adjustments", optional_argument, 0, 'a'},
             {"debug", no_argument, 0, 'd'},
+	    {"verbose", no_argument, 0, 'b'},
             {"version", no_argument, 0, 'v'},
             {0, 0, 0, 0}
     };
     int option_index = 0;
-    while ((gopt = getopt_long(argc, argv, "l:r:p:q:s:f:j:k:a:dv", long_options, &option_index )) != -1) {
+    while ((gopt = getopt_long(argc, argv, "1:2:p:q:s:f:j:k:a:bdv", long_options, &option_index )) != -1) {
         switch (gopt) {
-            case 'l' :
+            case '1' :
                 opt->R1_file = strdup(optarg);
                 break;
-            case 'r':
+            case '2':
                 opt->R2_file = strdup(optarg);
                 break;
             case 'p' :

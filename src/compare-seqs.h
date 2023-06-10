@@ -26,5 +26,10 @@ void add_primer(uint64_t, char*, kmer_bst_t*);
  */
 kmer_bst_t* find_primer(uint64_t, kmer_bst_t*);
 
+/*
+ * recursively print all primers
+ */
+
+void print_all_primers(kmer_bst_t*, int);
 
 #endif
