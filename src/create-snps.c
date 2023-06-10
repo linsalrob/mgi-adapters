@@ -36,5 +36,3 @@ void create_all_snps(char *adapter, int kmer, char* seqid, kmer_bst_t *primers) 
 }
 
 
-
-
