@@ -1,6 +1,7 @@
 IDIR =./include
 CC=gcc
-CFLAGS=-g -Wall -O2 -Wno-return-type -Wno-unused-variable -Wno-unused-function -I$(IDIR)
+# note that usually use -O2 but for valgrind debugging use -O0 which is slower but more accurate
+CFLAGS=-g -Wall -O0 -Wno-return-type -Wno-unused-variable -Wno-unused-function -I$(IDIR)
 LFLAGS= -lz -lm 
 
 ODIR=./obj/
@@ -23,7 +24,8 @@ objects := $(ODIR)print-sequences.o \
 	$(ODIR)store-primers.o $(ODIR)seqs_to_ints.o \
 	$(ODIR)rob_dna.o $(ODIR)test.o $(ODIR)filter_reads_with_n.o \
 	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)trim-paired-snp.o \
-	$(ODIR)create-snps.o $(ODIR)hash.o
+	$(ODIR)create-snps.o $(ODIR)hash.o $(ODIR)read_primers.o $(ODIR)match-all-snps.o \
+	$(ODIR)search-adapter-file.o
 
 $(objects): $(ODIR)%.o: $(SDIR)%.c
 	@mkdir -p $(@D)
@@ -55,7 +57,13 @@ $(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-
 
 search-mgi-adapters: $(BDIR)search-mgi-adapters
 
-EXEC=filter_reads_with_n search-mgi-adapters trim-mgi-adapters test
+$(BDIR)search-adapter-file: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)create-snps.o $(ODIR)match-all-snps.o $(ODIR)read_primers.o $(ODIR)search-adapter-file.o
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+
+search-adapter-file: $(BDIR)search-adapter-file
+
+EXEC=filter_reads_with_n search-mgi-adapters trim-mgi-adapters test search-adapter-file
 all: $(addprefix $(BDIR), $(EXEC))
 
 
