@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "compare-seqs.h"
 #include "print-sequences.h"
+#include "seqs_to_ints.h"
 
 
 void add_primer(uint64_t encoding, char* primerid, kmer_bst_t* ks) {
@@ -19,10 +20,10 @@ void add_primer(uint64_t encoding, char* primerid, kmer_bst_t* ks) {
 	
 	if (ks->bigger == NULL && ks->smaller == NULL) {
 		ks->value = encoding;
-		ks->id = (char *) malloc(sizeof(*primerid));
+		ks->id = malloc(strlen(primerid) + 1);
 		strcpy(ks->id, primerid);
-		ks->bigger = (kmer_bst_t *) malloc(sizeof(*ks->bigger));
-		ks->smaller = (kmer_bst_t *) malloc(sizeof(*ks->bigger));
+		ks->bigger = (kmer_bst_t *) malloc(((2 * sizeof(*ks->bigger)) + sizeof(uint64_t) + sizeof(char *)));
+		ks->smaller = (kmer_bst_t *)  malloc(((2 * sizeof(*ks->bigger)) + sizeof(uint64_t) + sizeof(char *)));
 		ks->bigger->bigger = NULL;
 		ks->bigger->smaller = NULL;
 		ks->smaller->bigger = NULL;
@@ -53,6 +54,26 @@ kmer_bst_t* find_primer(uint64_t encoding, kmer_bst_t* ks) {
 	if (encoding > ks->value)
 		return find_primer(encoding, ks->bigger);
 	return find_primer(encoding, ks->smaller);
+}
+
+
+void print_all_primers(kmer_bst_t* ks, int kmer) {
+	/*
+	 * print all the primers in this data structure
+	 * it does this recursively
+	 *
+	 * ks is our data structure, kmer is the length of the kmers
+	 */
+
+
+	if (ks->bigger)
+		print_all_primers(ks->bigger, kmer);
+
+	if (ks->value > 0)
+		printf("%s: %s (%ld)\n", ks->id, kmer_decoding(ks->value, kmer), ks->value);
+	
+	if (ks->smaller)
+		print_all_primers(ks->smaller, kmer);
 }
 
 
