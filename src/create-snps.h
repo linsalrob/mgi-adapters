@@ -3,7 +3,7 @@
 
 #include "compare-seqs.h"
 
-void create_all_snps(char *, int, int, char*, kmer_bst_t *);
+void create_all_snps(char *, int, char*, kmer_bst_t *);
 
 #endif
 

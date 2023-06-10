@@ -71,7 +71,7 @@ void search_pairwise_snps(struct options *opt) {
 	i7l_primers->id = "";
 
 
-	create_all_snps(opt->I7left, 0, r1kmer, "I7L", i7l_primers);
+	create_all_snps(opt->I7left, r1kmer, "I7L", i7l_primers);
 
 	struct R1_read **reads;
 	reads = malloc(sizeof(*reads) * opt->tablesize);
@@ -191,7 +191,7 @@ void search_pairwise_snps(struct options *opt) {
 		exit(3);
 	}
 
-	create_all_snps(i5right_rc, 0, r2kmer, "I5R", i5r_primers);
+	create_all_snps(i5right_rc, r2kmer, "I5R", i5r_primers);
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");
@@ -350,7 +350,7 @@ void trim_pairwise_snps(struct options *opt) {
 	i7l_primers->id = "";
 
 
-	create_all_snps(opt->I7left, 0, r1kmer, "I7L", i7l_primers);
+	create_all_snps(opt->I7left, r1kmer, "I7L", i7l_primers);
 
 	struct R1_read **reads;
 	reads = malloc(sizeof(*reads) * opt->tablesize);
@@ -469,7 +469,7 @@ void trim_pairwise_snps(struct options *opt) {
 		exit(3);
 	}
 
-	create_all_snps(i5right_rc, 0, r2kmer, "I5R", i5r_primers);
+	create_all_snps(i5right_rc, r2kmer, "I5R", i5r_primers);
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");

@@ -11,9 +11,9 @@
 
 
 
-void create_all_snps(char *adapter, int start, int kmer, char* seqid, kmer_bst_t *primers) {
+void create_all_snps(char *adapter, int kmer, char* seqid, kmer_bst_t *primers) {
 	/*
-	 * calculate a SNP at every position. There is pretty much no easy way to do this rather than an O(4**k) operation, I don't think?
+	 * calculate a SNP at every position. This is O(3*k) where k is length of kmer
 	 */
 
 	uint64_t enc = kmer_encoding(adapter, 0, kmer);
