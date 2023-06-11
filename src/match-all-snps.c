@@ -90,7 +90,6 @@ void search_all_pairwise_snps(struct options *opt) {
 		exit(2);
 	}
 
-	// Step 1. Read the R1 file and find the matches to any primer
 	if( access( opt->R1_file, R_OK ) == -1 ) {
 		// file doesn't exist
 		fprintf(stderr, "%sERROR: The file %s can not be found. Please check the file path%s\n", RED, opt->R1_file, ENDC);
@@ -102,6 +101,8 @@ void search_all_pairwise_snps(struct options *opt) {
 		return;
 	}
 
+	// Step 1. Read the R1 file and find the matches to any primer
+	
 	gzFile fp1 = gzopen(opt->R1_file, "r");
 	if (fp1 == NULL) {
 		fprintf(stderr, "%sERROR: Can not open %s%s\n", RED, opt->R1_file, ENDC);
@@ -118,30 +119,25 @@ void search_all_pairwise_snps(struct options *opt) {
 	
 	bool warning_printed = false;
 
-	struct encoded_kmers {
-		uint64_t enc;
-		*encoded_kmers next;
-	}
-
 	// A place to store our encdoded kmers
 	// 
-	// This should be an array of uint64_t with only
-	// those set that are needed.
-	encoded_kmers *enc_kmers[MAXKMER+1];
-	for (int i=0; i<=MAXKMER; i++)
-		enc_kmers[i] = malloc(sizeof(char) * i);
-	
+	// First, we make an array with just the lengths of the kmers we need to encode
+	// and then we encode those kmers. This reduces our search from ~30 to ~3
+	// (depending on how many primer lengths we have).
 
+	int kmer_lengths[MAXKMER];
+	int unique_kmer_count = 0;
+	for (int i=0; i<=MAXKMER; i++) 
+		if (all_primers[i]->value > 0) 
+			kmer_lengths[unique_kmer_count++] = i; 	// we need to remember this kmer length
 
+	// now we just add those kmers to this array and then we test them each time
+	uint64_t encoded_kmers[unique_kmer_count];
 
 	while ((l = kseq_read(seq)) >= 0) {
-		//  encode the first kmers in the sequence
-		for (int i = 0; i<=MAXKMER; i++) {
-			if (all_primers[i]->value > 0) {
-				fprintf(stderr, "Encoded a kmer for %d\n", i);
-				enc_kmers[
-		uint64_t enc = kmer_encoding(seq->seq.s, 0, r1kmer);
 		counts.R1_seqs++;
+		
+		// housekeeping warnings and definitions
 		if (!warning_printed && has_n(seq->seq.s)) {
 			fprintf(stderr, "%sWARNING: sequences have an N but we don't deal with them. They are encoded as A%s\n", BLUE, ENDC);
 			warning_printed = true;
@@ -156,28 +152,50 @@ void search_all_pairwise_snps(struct options *opt) {
 		R1read->id = strdup(seq->name.s);
 		R1read->next = NULL;
 
+		bool read_matched = false;
+		// end housekeeping warnings and definitions
 
-		kmer_bst_t *ks = find_primer(enc, i7l_primers);
-                if (ks) {
-			fprintf(match_out, "R1\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
-			counts.R1_found++;
-			R1read->trim = 0;
-			unsigned hashval = hash(R1read->id) % opt->tablesize;
-			R1read->next = reads[hashval];
-			reads[hashval] = R1read;
-			continue;
-		} 
+		//  encode the first kmers in the sequence
+		for (int i = 0; i<unique_kmer_count; i++)
+			encoded_kmers[i] = kmer_encoding(seq->seq.s, 0, kmer_lengths[i]);
 
-		for (int i=1; i<seq->seq.l - r1kmer + 1; i++) {
-			enc = next_kmer_encoding(seq->seq.s, i, r1kmer, enc);
-			kmer_bst_t *ks = find_primer(enc, i7l_primers);
+		// test for the first kmers in our data structure. We need to iterate the 
+		// array of encoded primers and see if we find an encoding in all_primers[k]
+		// for k being the length of the encoding
+		for (int i=0; i<unique_kmer_count; i++) {
+			uint64_t enc  = encoded_kmers[i];
+			kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
 			if (ks) {
-				fprintf(match_out, "R1\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, i, strlen(seq->seq.s)-i);
+				fprintf(match_out, "R1\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 				counts.R1_found++;
-				R1read->trim = i;
-				break;
-			}
+				R1read->trim = 0;
+				unsigned hashval = hash(R1read->id) % opt->tablesize;
+				R1read->next = reads[hashval];
+				reads[hashval] = R1read;
+				read_matched = true;
+			} 
 		}
+
+		if (read_matched)
+			continue; // no point continuing if there is an adapter match at position 0!
+
+		for (int posn=1; posn<seq->seq.l - MAXKMER + 1; posn++) {
+			for (int i=0; i<unique_kmer_count; i++) {
+				// calculate the next encoding for this kmer length
+				uint64_t enc  = next_kmer_encoding(seq->seq.s, posn, kmer_lengths[i], encoded_kmers[i]);
+				encoded_kmers[i] = enc; // remember it for next time!
+				kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
+				if (ks) {
+					fprintf(match_out, "R1\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
+					counts.R1_found++;
+					R1read->trim = posn;
+					read_matched = true;
+				}
+			}
+			if (read_matched)
+				break;
+		}
+
 		unsigned hashval = hash(R1read->id) % opt->tablesize;
 		R1read->next = reads[hashval];
 		reads[hashval] = R1read;
@@ -190,37 +208,8 @@ void search_all_pairwise_snps(struct options *opt) {
 	if (opt->R1_matches)
 		fclose(match_out);
 
-	// we don't need the I7left primers any more!
-	free(i7l_primers);
 
-	// Step 2. Read the R2 file and find the locations of I5right
-	// In this case, we need to rc the string so we can make all possible combinations of it
-	int r2kmer = strlen(opt->I5right);
-	char* i5right_rc = malloc(sizeof(char) * strlen(opt->I5right)+1);
-	rc(i5right_rc, opt->I5right);
-	if (r2kmer >= MAXKMER) {
-		fprintf(stderr, "%sKmer is %d. It needs to be less than %d, so we trimmed it to fit!%s\n", YELLOW, r2kmer, MAXKMER, ENDC);
-		r2kmer = MAXKMER;
-		i5right_rc[r2kmer]='\0';
-	}
-
-	//uint64_t i5r = kmer_encoding(opt->I5right, 0, r2kmer);
-	// i5r = reverse_complement(i5r, r2kmer);
-	
-	// malloc for possibilities for the bst
-	kmer_bst_t *i5r_primers;
-	i5r_primers = malloc(sizeof(*i5r_primers) * ((3*r2kmer)+1));
-	i5r_primers->bigger = NULL;
-	i5r_primers->smaller = NULL;
-	i5r_primers->value = 0;
-	i5r_primers->id = "";
-
-	// i5r_primers = (kmer_bst_t *) malloc(sizeof(*i5r_primers) * ((4*r2kmer)+1));
-	if (i5r_primers == NULL) {
-		fprintf(stderr, "%sCANNOT malloc for primer bst%s\n", RED, ENDC);
-		exit(3);
-	}
-
+	// Step 2. Read the R2 file and find the locations of any of the primers.
 
 	// Open R2 for reading
 	gzFile fp2 = gzopen(opt->R2_file, "r");
@@ -229,14 +218,14 @@ void search_all_pairwise_snps(struct options *opt) {
 		exit(3);
 	}
 	seq = kseq_init(fp2);
-	
+
 	// open our log files
 	FILE *adjust;
 	if (opt->R2_matches)
 		match_out = fopen(opt->R2_matches, "w");
 	else
 		match_out = stdout;
-	
+
 	if (opt->adjustments)
 		adjust = fopen(opt->adjustments, "w");
 	else
@@ -245,23 +234,35 @@ void search_all_pairwise_snps(struct options *opt) {
 	fprintf(adjust, "R1/R2\tSeq ID\tFrom\tTo\n");
 
 	while ((l = kseq_read(seq)) >= 0) {
-		// find the location of i5r if it is in this sequence
 		counts.R2_seqs++;
-		uint64_t enc = kmer_encoding(seq->seq.s, 0, r2kmer);
+		
+		//  encode the first kmers in the sequence
+		for (int i = 0; i<unique_kmer_count; i++)
+			encoded_kmers[i] = kmer_encoding(seq->seq.s, 0, kmer_lengths[i]);
+		
 		int trim = -1;
-		kmer_bst_t *ks = find_primer(enc, i5r_primers);
-		if (ks) {
-			fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
-			counts.R2_found++;
-			trim = 0;
-		} else {
-			for (int i=1; i<seq->seq.l - r2kmer + 1; i++) {
-				enc = next_kmer_encoding(seq->seq.s, i, r2kmer, enc);
-				kmer_bst_t *ks = find_primer(enc, i5r_primers);
-				if (ks) {
-					fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, i, strlen(seq->seq.s)-i);
-					counts.R2_found++;
-					trim = i;
+		
+		for (int i=0; i<unique_kmer_count; i++) {
+			uint64_t enc  = encoded_kmers[i];
+			kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
+
+			if (ks) {
+				fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
+				counts.R2_found++;
+				trim = 0;
+			} else {
+				for (int posn=1; posn<seq->seq.l - MAXKMER + 1; posn++) {
+					for (int i=0; i<unique_kmer_count; i++) {
+						// calculate the next encoding for this kmer length
+						uint64_t enc  = next_kmer_encoding(seq->seq.s, posn, kmer_lengths[i], encoded_kmers[i]);
+						encoded_kmers[i] = enc; // remember it for next time!
+						kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
+						if (ks) {
+							fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
+							counts.R2_found++;
+							trim = posn;
+						}
+					}
 				}
 			}
 		}
@@ -322,9 +323,8 @@ void search_all_pairwise_snps(struct options *opt) {
 	kseq_destroy(seq);
 	gzclose(fp2);
 
-	// we don't need the I5right primers any more!
-	free(i5r_primers);
-
+	for (int i=0; i<=MAXKMER; i++)
+		free(all_primers[i]);
 
 	fprintf(stderr, "Total sequences: R1 %d R2 %d\n", counts.R1_seqs, counts.R2_seqs);
 	fprintf(stderr, "Primer found: R1 %d R2 %d\n", counts.R1_found, counts.R2_found);
@@ -332,6 +332,5 @@ void search_all_pairwise_snps(struct options *opt) {
 	fprintf(stderr, "Adjusted offset: R1 %d R2 %d\n", counts.R1_adjusted, counts.R2_adjusted);
 	fprintf(stderr, "Sequences trimmed: R1 %d R2 %d\n", counts.R1_trimmed, counts.R2_trimmed);
 
-*/
 }
 

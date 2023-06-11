@@ -15,12 +15,13 @@
 
 void help() {
 	printf("USAGE: search-paired-snp -l -r -s -f -p -q\n");
-	printf("\nThis version attempts to look for SNPs at each position of your adapters\n\n");
-	printf("-1 --R1 R%s1%s file\n", GREEN, ENDC);
-	printf("-2 --R2 R%s2%s file\n", GREEN, ENDC);
+	printf("\nSearch for primers listed in %s--primers%s, allowing for 1-bp mismatches, against all the reads in %s--R1%s and %s--R2%s\n", 
+			GREEN, ENDC, GREEN, ENDC, GREEN, ENDC);
+	printf("-1 --R1 R%s1%s file (%srequired%s)\n", GREEN, ENDC, RED, ENDC);
+	printf("-2 --R2 R%s2%s file (%srequired%s)\n", GREEN, ENDC, RED, ENDC);
+	printf("-f --primers fasta file of primers (%srequired%s)\n", RED, ENDC);
 	printf("-p --outputR1 R1 output fastq file (will be gzip compressed)\n");
 	printf("-q --outputR2 R2 output fastq file (will be gzip compressed)\n");
-	printf("-f --primers fasta file of primers\n");
 	printf("-j --matchesR1 Write the R1 matches to this file. Default: stdout\n");
 	printf("-k --matchesR2 Write the R2 matches to this file. Default: stdout\n");
 	printf("-n --noreverse Do not reverse the sequences\n");
@@ -68,7 +69,7 @@ int main(int argc, char* argv[]) {
             {"matchesR1",  optional_argument, 0, 'j'},
             {"matchesR2",  optional_argument, 0, 'k'},
             {"primers",  required_argument, 0, 'f'},
-	    {"noreverse", optstatic struct option long_optionsional_argument, 0, 'n'},
+	    {"noreverse", optional_argument, 0, 'n'},
 	    {"adjustments", optional_argument, 0, 'a'},
             {"debug", no_argument, 0, 'd'},
             {"version", no_argument, 0, 'v'},
@@ -107,8 +108,10 @@ int main(int argc, char* argv[]) {
                 break;
             case 'd': 
 		opt->debug = true;
-		opt->verbose = true;
                 break;
+	    case 'b':
+		opt->verbose = true;
+		break;
             case 'v':
                 printf("Version: %f\n", __version__);
                 return 0;

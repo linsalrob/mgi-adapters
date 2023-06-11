@@ -57,7 +57,7 @@ $(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-
 
 search-mgi-adapters: $(BDIR)search-mgi-adapters
 
-$(BDIR)search-adapter-file: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)create-snps.o $(ODIR)match-all-snps.o $(ODIR)read_primers.o $(ODIR)search-adapter-file.o
+$(BDIR)search-adapter-file: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)create-snps.o $(ODIR)match-all-snps.o $(ODIR)read_primers.o $(ODIR)search-adapter-file.o $(ODIR)hash.o 
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
