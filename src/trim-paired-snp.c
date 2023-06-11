@@ -101,6 +101,8 @@ int main(int argc, char* argv[]) {
             case 'a':
                 opt->adjustments = strdup(optarg);
                 break;
+            case 'b': opt->verbose = true;
+                break;
             case 'd': opt->debug = true;
                 break;
             case 'v':
