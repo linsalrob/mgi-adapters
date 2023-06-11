@@ -598,7 +598,7 @@ void trim_pairwise_snps(struct options *opt) {
 	}
 	seq = kseq_init(fp1);
 
-	// Open R2 for writing
+	// Open R1 for writing
 	pipe_file = malloc(sizeof(char) * (strlen(opt->R1_output) + 10));
 	strcpy(pipe_file, "gzip - > ");
 	strcat(pipe_file, opt->R1_output);
