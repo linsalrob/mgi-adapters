@@ -20,53 +20,60 @@ install: $(BDIR)search-mgi-adapters $(BDIR)filter_reads_with_n
 	install -d $(DESTDIR)$(PREFIX)
 	install -m 755 $^ $(DESTDIR)$(PREFIX)
 
-objects := $(ODIR)print-sequences.o \
-	$(ODIR)store-primers.o $(ODIR)seqs_to_ints.o \
-	$(ODIR)rob_dna.o $(ODIR)test.o $(ODIR)filter_reads_with_n.o \
-	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)trim-paired-snp.o \
-	$(ODIR)create-snps.o $(ODIR)hash.o $(ODIR)read_primers.o $(ODIR)match-all-snps.o \
-	$(ODIR)search-adapter-file.o $(ODIR)primer-match-counts.o
+OBJ=print-sequences store-primers seqs_to_ints rob_dna test filter_reads_with_n match-paired-snps search-paired-snp trim-paired-snp \
+	create-snps hash read_primers match-all-snps search-adapter-file primer-match-counts
+objects := $(addsuffix .o, $(addprefix $(ODIR), $(OBJ)))
 
 $(objects): $(ODIR)%.o: $(SDIR)%.c
 	@mkdir -p $(@D)
 	$(CC) -c $(CFLAGS) $< -o $@ $(FLAGS)
 
+BASE=create-snps hash rob_dna seqs_to_ints store-primers 
 
-$(BDIR)test: $(ODIR)store-primers.o $(ODIR)seqs_to_ints.o $(ODIR)print-sequences.o $(ODIR)test.o $(ODIR)rob_dna.o
+TEST=${BASE} print-sequences test
+testobj := $(addsuffix .o, $(addprefix $(ODIR), $(TEST)))
+$(BDIR)test: $(testobj)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 test: $(BDIR)test
 
-$(BDIR)filter_reads_with_n: $(ODIR)rob_dna.o $(ODIR)filter_reads_with_n.o
+
+FRN=rob_dna filter_reads_with_n
+frnobj := $(addsuffix .o, $(addprefix $(ODIR), $(FRN)))
+$(BDIR)filter_reads_with_n: $(frnobj)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-
 filter_reads_with_n: $(BDIR)filter_reads_with_n
 
 
-$(BDIR)trim-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)match-paired-snps.o $(ODIR)trim-paired-snp.o $(ODIR)create-snps.o $(ODIR)hash.o
+TRIM=${BASE} match-paired-snps trim-paired-snp
+trimobj := $(addsuffix .o, $(addprefix $(ODIR), $(TRIM)))
+$(BDIR)trim-mgi-adapters: $(trimobj)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-
 trim-mgi-adapters: $(BDIR)trim-mgi-adapters
 
-$(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)create-snps.o $(ODIR)hash.o
+
+SEARCHMGI=${BASE} match-paired-snps search-paired-snp 
+searchmgiobj := $(addsuffix .o, $(addprefix $(ODIR), $(SEARCHMGI)))
+$(BDIR)search-mgi-adapters: $(searchmgiobj)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-
 search-mgi-adapters: $(BDIR)search-mgi-adapters
 
-$(BDIR)search-adapter-file: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)create-snps.o $(ODIR)match-all-snps.o $(ODIR)read_primers.o $(ODIR)search-adapter-file.o $(ODIR)hash.o  $(ODIR)primer-match-counts.o
+
+SEARCHAF=${BASE} match-all-snps primer-match-counts read_primers search-adapter-file 
+searchafobj := $(addsuffix .o, $(addprefix $(ODIR), $(SEARCHAF)))
+$(BDIR)search-adapter-file: $(searchafobj)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 search-adapter-file: $(BDIR)search-adapter-file
 
+
 EXEC=filter_reads_with_n search-mgi-adapters trim-mgi-adapters test search-adapter-file
 all: $(addprefix $(BDIR), $(EXEC))
-
-
 
 .PHONY: clean
 
