@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 	struct options *opt;
 	opt = malloc(sizeof(struct options));
 
-	opt->tablesize = 100003;
+	opt->tablesize = 17976787; // this is the next prime number after my largest sequence :)
 	opt->R1_file = NULL;
 	opt->R2_file = NULL;
 	opt->R1_output = NULL;
