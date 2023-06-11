@@ -64,13 +64,13 @@ int main(int argc, char* argv[]) {
     static struct option long_options[] = {
             {"R1",  required_argument, 0, '1'},
             {"R2",  required_argument, 0, '2'},
-            {"outputR1",  optional_argument, 0, 'p'},
-            {"outputR2",  optional_argument, 0, 'q'},
-            {"matchesR1",  optional_argument, 0, 'j'},
-            {"matchesR2",  optional_argument, 0, 'k'},
             {"primers",  required_argument, 0, 'f'},
-	    {"noreverse", optional_argument, 0, 'n'},
-	    {"adjustments", optional_argument, 0, 'a'},
+            {"outputR1",  required_argument, 0, 'p'},
+            {"outputR2",  required_argument, 0, 'q'},
+            {"matchesR1",  required_argument, 0, 'j'},
+            {"matchesR2",  required_argument, 0, 'k'},
+	    {"noreverse", required_argument, 0, 'n'},
+	    {"adjustments", required_argument, 0, 'a'},
             {"debug", no_argument, 0, 'd'},
             {"version", no_argument, 0, 'v'},
 	    {"verbose", no_argument, 0, 'b'},
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
             case '2':
                 opt->R2_file = strdup(optarg);
                 break;
-            case 'p' :
+            case 'p':
                 opt->R1_output = strdup(optarg);
                 break;
             case 'q':
@@ -143,5 +143,6 @@ int main(int argc, char* argv[]) {
 	    opt->R2_output = "R2.trimmed.fastq.gz";
 
     search_all_pairwise_snps(opt);
+    free(opt);
 }
 
