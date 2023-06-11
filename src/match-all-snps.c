@@ -37,9 +37,6 @@ void search_all_pairwise_snps(struct options *opt) {
 	 * 	opt->tablesize = the size of the table to store R1 reads. Should be resonably large to avoid O(n) behaviour
 	 */	
 	
-	int debugger = 0;
-	fprintf(stderr, "Debug: %i\n", debugger++);
-
 	typedef struct COUNTS {
 		int R1_seqs;
 		int R2_seqs;
@@ -57,12 +54,11 @@ void search_all_pairwise_snps(struct options *opt) {
 	// create an array of kmer_bsts and malloc them
 	kmer_bst_t *all_primers[MAXKMER+1];
 
-	fprintf(stderr, "Debug: %i\n", debugger++);
 	for (int i = 0; i<=MAXKMER; i++) {
 		all_primers[i] = malloc(sizeof(kmer_bst_t));
 
 		if (all_primers[i] == NULL) {
-			fprintf(stderr, "Can't create entry %d\n", i);
+			fprintf(stderr, "Can't malloc memory for all_primers %d\n", i);
 			exit(1);
 		}
 		all_primers[i]->bigger = NULL;
@@ -71,16 +67,31 @@ void search_all_pairwise_snps(struct options *opt) {
 		all_primers[i]->id = "";
 	}
 
-	printf("All primers 0 is %ld\n", all_primers[0]->value);
-	fprintf(stderr, "Debug: %i\n", debugger++);
 	// read the primer file
 	read_primers_create_snps(opt->primers, all_primers, opt->reverse, opt->verbose);
-	fprintf(stderr, "Debug: %i\n", debugger++);
 	
-	fprintf(stderr, "%sWe have read the primers%s\n", GREEN, ENDC);
-	for (int i = 0; i<=MAXKMER; i++)
-		print_all_primers(all_primers[i], i);
-	
+	if (opt->debug) {	
+		fprintf(stderr, "%sWe have read the primers%s\n", GREEN, ENDC);
+		for (int i = 0; i<=MAXKMER; i++)
+			print_all_primers(all_primers[i], i);
+	}
+
+	// A place to store our encdoded kmers
+	// 
+	// First, we make an array with just the lengths of the kmers we need to encode
+	// and then we encode those kmers. This reduces our search from ~30 to ~3
+	// (depending on how many primer lengths we have).
+	// We also do this longer primers to shorter, so that we initially trim off the
+	// longest possible primers
+
+	int kmer_lengths[MAXKMER];
+	int unique_kmer_count = 0;
+	for (int i=MAXKMER; i>=0; i--) 
+		if (all_primers[i]->value > 0) 
+			kmer_lengths[unique_kmer_count++] = i; 	// we need to remember this kmer length
+
+	// now we just add those kmers to this array and then we test them each time
+	uint64_t encoded_kmers[unique_kmer_count];
 
 	struct R1_read **reads;
 	reads = malloc(sizeof(*reads) * opt->tablesize);
@@ -114,25 +125,8 @@ void search_all_pairwise_snps(struct options *opt) {
 	FILE *match_out;
 	if (opt->R1_matches)
 		match_out = fopen(opt->R1_matches, "w");
-	else
-		match_out = stdout;
 	
 	bool warning_printed = false;
-
-	// A place to store our encdoded kmers
-	// 
-	// First, we make an array with just the lengths of the kmers we need to encode
-	// and then we encode those kmers. This reduces our search from ~30 to ~3
-	// (depending on how many primer lengths we have).
-
-	int kmer_lengths[MAXKMER];
-	int unique_kmer_count = 0;
-	for (int i=0; i<=MAXKMER; i++) 
-		if (all_primers[i]->value > 0) 
-			kmer_lengths[unique_kmer_count++] = i; 	// we need to remember this kmer length
-
-	// now we just add those kmers to this array and then we test them each time
-	uint64_t encoded_kmers[unique_kmer_count];
 
 	while ((l = kseq_read(seq)) >= 0) {
 		counts.R1_seqs++;
@@ -166,7 +160,8 @@ void search_all_pairwise_snps(struct options *opt) {
 			uint64_t enc  = encoded_kmers[i];
 			kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
 			if (ks) {
-				fprintf(match_out, "R1\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
+				if (opt->R1_matches)
+					fprintf(match_out, "R1\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 				counts.R1_found++;
 				R1read->trim = 0;
 				unsigned hashval = hash(R1read->id) % opt->tablesize;
@@ -186,7 +181,8 @@ void search_all_pairwise_snps(struct options *opt) {
 				encoded_kmers[i] = enc; // remember it for next time!
 				kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
 				if (ks) {
-					fprintf(match_out, "R1\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
+					if (opt->R1_matches)
+						fprintf(match_out, "R1\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
 					counts.R1_found++;
 					R1read->trim = posn;
 					read_matched = true;
@@ -221,19 +217,27 @@ void search_all_pairwise_snps(struct options *opt) {
 	}
 	seq = kseq_init(fp2);
 
+	// if we want to write the files, we open a pipe
+	// otherwise it is null. so we just need to check before writing
+	// Open R2 for writing
+	FILE *pipe = NULL;
+	if (opt->R2_output) {
+		char* pipe_file = malloc(sizeof(char) * (strlen(opt->R2_output) + 10));
+		strcpy(pipe_file, "gzip - > ");
+		strcat(pipe_file, opt->R2_output);
+		pipe = popen(pipe_file, "w");
+		free(pipe_file);
+	}
+
 	// open our log files
 	FILE *adjust;
 	if (opt->R2_matches)
 		match_out = fopen(opt->R2_matches, "w");
-	else
-		match_out = stdout;
 
-	if (opt->adjustments)
+	if (opt->adjustments) {
 		adjust = fopen(opt->adjustments, "w");
-	else
-		adjust = stdout;
-
-	fprintf(adjust, "R1/R2\tSeq ID\tFrom\tTo\n");
+		fprintf(adjust, "R1/R2\tSeq ID\tFrom\tTo\n");
+	}
 
 	while ((l = kseq_read(seq)) >= 0) {
 		counts.R2_seqs++;
@@ -249,7 +253,8 @@ void search_all_pairwise_snps(struct options *opt) {
 			kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
 
 			if (ks) {
-				fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
+				if (opt->R2_matches)
+					fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 				counts.R2_found++;
 				trim = 0;
 				read_matched = true;
@@ -264,7 +269,8 @@ void search_all_pairwise_snps(struct options *opt) {
 					encoded_kmers[i] = enc; // remember it for next time!
 					kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
 					if (ks) {
-						fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
+						if (opt->R2_matches)
+							fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
 						counts.R2_found++;
 						trim = posn;
 						read_matched = true;
@@ -291,27 +297,32 @@ void search_all_pairwise_snps(struct options *opt) {
 					break;
 				}
 				if (trim == -1 && R1->trim > -1) {
-					fprintf(adjust, "R2\t%s\t%d\t%d\n", seq->name.s, trim, R1->trim);
+					if (opt->adjustments)
+						fprintf(adjust, "R2\t%s\t%d\t%d\n", seq->name.s, trim, R1->trim);
 					trim = R1->trim;
 					counts.R2_adjusted++;
 					break;
 				}
 				if (R1->trim == -1 && trim > -1) {
-					fprintf(adjust, "R1\t%s\t%d\t%d\n", R1->id, R1->trim, trim);
+					if (opt->adjustments)
+						fprintf(adjust, "R1\t%s\t%d\t%d\n", R1->id, R1->trim, trim);
 					R1->trim = trim;
 					counts.R1_adjusted++;
 					break;
 				}
 
-				fprintf(stderr, "%sWe want to trim starting at %d from R1 and %d from R2 in %s. We went with the shorter%s\n", BLUE, R1->trim, trim, seq->name.s, ENDC);
+				if (opt->verbose)
+					fprintf(stderr, "%sWe want to trim starting at %d from R1 and %d from R2 in %s. We went with the shorter%s\n", BLUE, R1->trim, trim, seq->name.s, ENDC);
 				if (trim < R1->trim) {
-					fprintf(adjust, "R1\t%s\t%d\t%d\n", R1->id, R1->trim, trim);
+					if (opt->adjustments)
+						fprintf(adjust, "R1\t%s\t%d\t%d\n", R1->id, R1->trim, trim);
 					R1->trim = trim;
 					counts.R1_adjusted++;
 					break;
 				}
 				if (trim > R1->trim) {
-					fprintf(adjust, "R2\t%s\t%d\t%d\n", seq->name.s, trim, R1->trim);
+					if (opt->adjustments)
+						fprintf(adjust, "R2\t%s\t%d\t%d\n", seq->name.s, trim, R1->trim);
 					trim = R1->trim;
 					counts.R2_adjusted++;
 					break;
@@ -322,9 +333,58 @@ void search_all_pairwise_snps(struct options *opt) {
 		if (!matched) {
 			fprintf(stderr, "%s We did not find an R1 that matches %s%s\n", PINK, seq->name.s, ENDC);
 		}
+		if (trim > -1) {
+			seq->seq.s[trim] = '\0';
+			seq->qual.s[trim] = '\0';
+			counts.R2_trimmed++;
+		}
+		if (pipe)
+			fprintf(pipe, "@%s %s\n%s\n+\n%s\n", seq->name.s, seq->comment.s, seq->seq.s, seq->qual.s);
 
 
 	}
+	if (pipe)
+		pclose(pipe);
+
+	
+	// do we need to write to R1
+	if (opt->R1_output) {
+		// Step 3. Reread R1 and write the left reads, trimming at (strcmp(id, seq->name.s) == 0) -> trim
+		// We only need to do this if we are going to write to the file.
+
+		fp1 = gzopen(opt->R1_file, "r");
+		if (fp1 == NULL) {
+			fprintf(stderr, "%sERROR: Can not open %s%s\n", RED, opt->R1_file, ENDC);
+			exit(3);
+		}
+		seq = kseq_init(fp1);
+
+		char* pipe_file = malloc(sizeof(char) * (strlen(opt->R1_output) + 10));
+		strcpy(pipe_file, "gzip - > ");
+		strcat(pipe_file, opt->R1_output);
+
+		pipe = popen(pipe_file, "w");
+
+		while ((l = kseq_read(seq)) >= 0) {
+			unsigned hashval = hash(seq->name.s) % opt->tablesize;
+			struct R1_read *R1 = reads[hashval];
+			while (R1 != NULL) {
+				if (strcmp(R1->id, seq->name.s) == 0) {
+					if (R1->trim > -1) {
+						seq->seq.s[R1->trim] = '\0';
+						seq->qual.s[R1->trim] = '\0';
+						counts.R1_trimmed++;
+					}
+				}
+				R1 = R1->next;
+			}
+			fprintf(pipe, "@%s %s\n%s\n+\n%s\n", seq->name.s, seq->comment.s, seq->seq.s, seq->qual.s);
+		}
+
+		pclose(pipe);
+
+	}
+
 
 	if (opt->adjustments)
 		fclose(adjust);
@@ -335,6 +395,8 @@ void search_all_pairwise_snps(struct options *opt) {
 
 	for (int i=0; i<=MAXKMER; i++)
 		free(all_primers[i]);
+
+	free(reads);
 
 	fprintf(stderr, "Total sequences: R1 %d R2 %d\n", counts.R1_seqs, counts.R2_seqs);
 	fprintf(stderr, "Primer found: R1 %d R2 %d\n", counts.R1_found, counts.R2_found);
