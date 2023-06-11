@@ -191,6 +191,8 @@ void search_all_pairwise_snps(struct options *opt) {
 					R1read->trim = posn;
 					read_matched = true;
 				}
+				if (read_matched)
+					break;
 			}
 			if (read_matched)
 				break;
@@ -235,7 +237,7 @@ void search_all_pairwise_snps(struct options *opt) {
 
 	while ((l = kseq_read(seq)) >= 0) {
 		counts.R2_seqs++;
-		
+		bool read_matched = false;
 		//  encode the first kmers in the sequence
 		for (int i = 0; i<unique_kmer_count; i++)
 			encoded_kmers[i] = kmer_encoding(seq->seq.s, 0, kmer_lengths[i]);
@@ -250,20 +252,28 @@ void search_all_pairwise_snps(struct options *opt) {
 				fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 				counts.R2_found++;
 				trim = 0;
-			} else {
-				for (int posn=1; posn<seq->seq.l - MAXKMER + 1; posn++) {
-					for (int i=0; i<unique_kmer_count; i++) {
-						// calculate the next encoding for this kmer length
-						uint64_t enc  = next_kmer_encoding(seq->seq.s, posn, kmer_lengths[i], encoded_kmers[i]);
-						encoded_kmers[i] = enc; // remember it for next time!
-						kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
-						if (ks) {
-							fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
-							counts.R2_found++;
-							trim = posn;
-						}
+				read_matched = true;
+			} 
+		}
+
+		if (!read_matched) {
+			for (int posn=1; posn<seq->seq.l - MAXKMER + 1; posn++) {
+				for (int i=0; i<unique_kmer_count; i++) {
+					// calculate the next encoding for this kmer length
+					uint64_t enc  = next_kmer_encoding(seq->seq.s, posn, kmer_lengths[i], encoded_kmers[i]);
+					encoded_kmers[i] = enc; // remember it for next time!
+					kmer_bst_t *ks = find_primer(enc, all_primers[kmer_lengths[i]]);
+					if (ks) {
+						fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
+						counts.R2_found++;
+						trim = posn;
+						read_matched = true;
 					}
+					if (read_matched)
+						break;
 				}
+				if (read_matched)
+					break;
 			}
 		}
 		// we either have a value or -1 for trim.
