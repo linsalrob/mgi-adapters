@@ -95,7 +95,8 @@ void read_primers_create_snps(char* primerfile, kmer_bst_t** all_primers, bool r
 	gzFile fp;
 	kseq_t *seq;
 
-	fprintf(stderr, "%sREADING %s%s\n", PINK, primerfile, ENDC);
+	if (verbose)
+		fprintf(stderr, "%sREADING %s%s\n", PINK, primerfile, ENDC);
 
 	fp = gzopen(primerfile, "r");
 	seq = kseq_init(fp);
@@ -125,7 +126,6 @@ void read_primers_create_snps(char* primerfile, kmer_bst_t** all_primers, bool r
 		if (verbose)
 			fprintf(stderr, "%sEncoding %s with length %ld using k-mer %d%s\n", GREEN, seq->seq.s, seq->seq.l, kmer, ENDC);
 	}
-	fprintf(stderr, "All primers read\n");
 	kseq_destroy(seq);
 	gzclose(fp);
 }
