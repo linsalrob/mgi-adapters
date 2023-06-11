@@ -54,6 +54,7 @@ int main(int argc, char* argv[]) {
 	opt->R2_output = NULL;
 	opt->R1_matches = NULL;
 	opt->R2_matches = NULL;
+	opt->primer_occurrences = 50;
 	opt->reverse = true;
 	opt->primers = NULL;
 	opt->debug = false;
@@ -71,6 +72,7 @@ int main(int argc, char* argv[]) {
             {"matchesR2",  required_argument, 0, 'k'},
 	    {"noreverse", required_argument, 0, 'n'},
 	    {"adjustments", required_argument, 0, 'a'},
+	    {"primeroccurrences", required_argument, 0, 3},
             {"debug", no_argument, 0, 'd'},
             {"version", no_argument, 0, 'v'},
 	    {"verbose", no_argument, 0, 'b'},
@@ -115,6 +117,9 @@ int main(int argc, char* argv[]) {
             case 'v':
                 printf("Version: %f\n", __version__);
                 return 0;
+	    case 3:
+		opt->primer_occurrences = atoi(optarg);
+		break;
 	    default: help();
 	        exit(EXIT_FAILURE);
 	}

@@ -16,6 +16,7 @@ struct options {
 	char* R2_matches;
 	char* adjustments;
 	char* primers;
+	int primer_occurrences;
 	bool reverse;
 	int tablesize;
 	bool verbose;

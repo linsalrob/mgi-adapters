@@ -21,6 +21,7 @@
 #include "hash.h"
 #include "kseq.h"
 #include "match-all-snps.h"
+#include "primer-match-counts.h"
 #include "read_primers.h"
 #include "rob_dna.h"
 #include "seqs_to_ints.h"
@@ -112,6 +113,16 @@ void search_all_pairwise_snps(struct options *opt) {
 		return;
 	}
 
+	// Initialize a primer count structure
+	primer_counts_t *pc;
+	pc = malloc(sizeof(primer_counts_t *) + sizeof(char*) + sizeof(int) + (2 * sizeof(int[5])));
+	pc->id = NULL;
+	pc->count = 0;
+	for (int i=0; i<5; i++) {
+                pc->before[i] = 0;
+                pc->after[i] = 0;
+        }
+
 	// Step 1. Read the R1 file and find the matches to any primer
 	
 	gzFile fp1 = gzopen(opt->R1_file, "r");
@@ -130,6 +141,8 @@ void search_all_pairwise_snps(struct options *opt) {
 
 	while ((l = kseq_read(seq)) >= 0) {
 		counts.R1_seqs++;
+		if (opt->debug)
+			fprintf(stderr, "Reading %s\n", seq->name.s);
 		
 		// housekeeping warnings and definitions
 		if (!warning_printed && has_n(seq->seq.s)) {
@@ -163,6 +176,7 @@ void search_all_pairwise_snps(struct options *opt) {
 				if (opt->R1_matches)
 					fprintf(match_out, "R1\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 				counts.R1_found++;
+				count_primer_occurrence(pc, ks->id, '^', seq->seq.s[kmer_lengths[i]+1]); //save the primer count for reporting
 				R1read->trim = 0;
 				unsigned hashval = hash(R1read->id) % opt->tablesize;
 				R1read->next = reads[hashval];
@@ -173,7 +187,7 @@ void search_all_pairwise_snps(struct options *opt) {
 
 		if (read_matched)
 			continue; // no point continuing if there is an adapter match at position 0!
-
+		
 		for (int posn=1; posn<seq->seq.l - MAXKMER + 1; posn++) {
 			for (int i=0; i<unique_kmer_count; i++) {
 				// calculate the next encoding for this kmer length
@@ -184,6 +198,7 @@ void search_all_pairwise_snps(struct options *opt) {
 					if (opt->R1_matches)
 						fprintf(match_out, "R1\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
 					counts.R1_found++;
+					count_primer_occurrence(pc, ks->id, seq->seq.s[posn-1], seq->seq.s[kmer_lengths[i]+1]); //save the primer count for reporting
 					R1read->trim = posn;
 					read_matched = true;
 				}
@@ -256,6 +271,7 @@ void search_all_pairwise_snps(struct options *opt) {
 				if (opt->R2_matches)
 					fprintf(match_out, "R2\t%s\t%s\t0\t-%ld\n", ks->id, seq->name.s, strlen(seq->seq.s));
 				counts.R2_found++;
+				count_primer_occurrence(pc, ks->id, '^', seq->seq.s[kmer_lengths[i]+1]); //save the primer count for reporting
 				trim = 0;
 				read_matched = true;
 			} 
@@ -272,6 +288,7 @@ void search_all_pairwise_snps(struct options *opt) {
 						if (opt->R2_matches)
 							fprintf(match_out, "R2\t%s\t%s\t%d\t-%ld\n", ks->id, seq->name.s, posn, strlen(seq->seq.s)-posn);
 						counts.R2_found++;
+						count_primer_occurrence(pc, ks->id, seq->seq.s[posn-1], seq->seq.s[kmer_lengths[i]+1]); //save the primer count for reporting
 						trim = posn;
 						read_matched = true;
 					}
@@ -398,11 +415,14 @@ void search_all_pairwise_snps(struct options *opt) {
 
 	free(reads);
 
-	fprintf(stderr, "Total sequences: R1 %d R2 %d\n", counts.R1_seqs, counts.R2_seqs);
-	fprintf(stderr, "Primer found: R1 %d R2 %d\n", counts.R1_found, counts.R2_found);
-	fprintf(stderr, "Same Offset: %d (includes no adapter)\n", counts.same);
-	fprintf(stderr, "Adjusted offset: R1 %d R2 %d\n", counts.R1_adjusted, counts.R2_adjusted);
-	fprintf(stderr, "Sequences trimmed: R1 %d R2 %d\n", counts.R1_trimmed, counts.R2_trimmed);
+	printf("Total sequences: R1 %d R2 %d\n", counts.R1_seqs, counts.R2_seqs);
+	printf("Primer found: R1 %d R2 %d\n", counts.R1_found, counts.R2_found);
+	printf("Same Offset: %d (includes no adapter)\n", counts.same);
+	printf("Adjusted offset: R1 %d R2 %d\n", counts.R1_adjusted, counts.R2_adjusted);
+	printf("Sequences trimmed: R1 %d R2 %d\n", counts.R1_trimmed, counts.R2_trimmed);
 
+
+	printf("\nAdapter occurrences:\n");
+	print_primers(pc, opt->primer_occurrences);
 }
 

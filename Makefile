@@ -25,7 +25,7 @@ objects := $(ODIR)print-sequences.o \
 	$(ODIR)rob_dna.o $(ODIR)test.o $(ODIR)filter_reads_with_n.o \
 	$(ODIR)match-paired-snps.o $(ODIR)search-paired-snp.o $(ODIR)trim-paired-snp.o \
 	$(ODIR)create-snps.o $(ODIR)hash.o $(ODIR)read_primers.o $(ODIR)match-all-snps.o \
-	$(ODIR)search-adapter-file.o
+	$(ODIR)search-adapter-file.o $(ODIR)primer-match-counts.o
 
 $(objects): $(ODIR)%.o: $(SDIR)%.c
 	@mkdir -p $(@D)
@@ -57,7 +57,7 @@ $(BDIR)search-mgi-adapters: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-
 
 search-mgi-adapters: $(BDIR)search-mgi-adapters
 
-$(BDIR)search-adapter-file: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)create-snps.o $(ODIR)match-all-snps.o $(ODIR)read_primers.o $(ODIR)search-adapter-file.o $(ODIR)hash.o 
+$(BDIR)search-adapter-file: $(ODIR)seqs_to_ints.o $(ODIR)rob_dna.o $(ODIR)store-primers.o $(ODIR)create-snps.o $(ODIR)match-all-snps.o $(ODIR)read_primers.o $(ODIR)search-adapter-file.o $(ODIR)hash.o  $(ODIR)primer-match-counts.o
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
