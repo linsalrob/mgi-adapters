@@ -104,7 +104,8 @@ void read_primers_create_snps(char* primerfile, kmer_bst_t** all_primers, bool r
 	while ((l = kseq_read(seq)) >= 0) {
 		int kmer = strlen(seq->seq.s);
 		if (seq->seq.l > MAXKMER) {
-			fprintf(stderr, "%sWARNING: Length of %s is longer than our maximum (%ld bp), so we had to truncate it%s\n", RED, seq->name.s, seq->seq.l, ENDC);
+			if (verbose)
+				fprintf(stderr, "%sWARNING: Length of %s is longer than our maximum (%ld bp), so we had to truncate it%s\n", RED, seq->name.s, seq->seq.l, ENDC);
 			kmer = MAXKMER;
 		}
 
