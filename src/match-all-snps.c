@@ -145,7 +145,7 @@ void search_all_pairwise_snps(struct options *opt) {
 			fprintf(stderr, "Reading %s\n", seq->name.s);
 		
 		// housekeeping warnings and definitions
-		if (!warning_printed && has_n(seq->seq.s)) {
+		if (opt->verbose && !warning_printed && has_n(seq->seq.s)) {
 			fprintf(stderr, "%sWARNING: sequences have an N but we don't deal with them. They are encoded as A%s\n", BLUE, ENDC);
 			warning_printed = true;
 		}
